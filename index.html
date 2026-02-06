@@ -1,17 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ghost-OS | Ephemeral VM</title>
+    <meta http-equiv="Cache-Control" content="no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
     <style>
-        body { background: #000; color: #fff; font-family: monospace; margin: 0; }
-        #screen { white-space: pre; font-size: 14px; line-height: 15px; }
-        .status-bar { padding: 10px; background: #222; border-bottom: 1px solid #444; font-size: 12px; }
+        body { background: #000; color: #fff; font-family: monospace; margin: 0; overflow: hidden; }
+        #screen_container { width: 100vw; height: calc(100vh - 40px); cursor: text; overflow-y: auto; }
+        #screen { white-space: pre; font-size: 14px; line-height: 15px; padding: 10px; }
+        
+        .status-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 0 15px; 
+            height: 40px;
+            background: #1a1a1a; 
+            border-bottom: 1px solid #333; 
+            font-size: 12px; 
+        }
+
+        .btn-group { display: flex; gap: 10px; }
+
+        .btn {
+            background: #222;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        .btn:hover { background: #333; color: #fff; }
+
+        .destruct-btn {
+            background: #441111;
+            color: #ff5555;
+            border: 1px solid #ff5555;
+        }
+        .destruct-btn:hover { background: #661111; color: #fff; }
+
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 1000; text-align: center; padding: 20px;
+        }
+        .modal { max-width: 600px; border: 1px solid #444; padding: 30px; background: #111; }
+        .accept-btn {
+            background: #005500; color: #fff; border: 1px solid #0f0;
+            padding: 10px 20px; cursor: pointer; font-size: 16px; margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="status-bar">
-        Ghost-OS v1.0 | Status: <span style="color:#0f0">RAM-ONLY MODE</span> | No Data Is Saved
+
+    <div id="overlay">
+        <div class="modal">
+            <h2 style="color: #0f0;">GHOST-OS INITIALIZATION</h2>
+            <p><strong>PRIVACY NOTICE:</strong> This environment runs strictly in your browser's RAM. No data is sent to a server. All data vanishes upon closing this tab.</p>
+            <p style="color: #aaa; font-size: 13px;">
+                <strong>DISCLAIMER:</strong> This tool is provided "AS IS". We provide no security guarantees and are not liable for data loss or exposure of sensitive information. By clicking accept, you assume all risks.
+            </p>
+            <button class="accept-btn" onclick="startVM()">I ACCEPT - BOOT OS</button>
+        </div>
     </div>
+
+    <div class="status-bar">
+        <div>Ghost-OS v1.0 | <span style="color:#0f0">RAM-ONLY MODE</span></div>
+        <div class="btn-group">
+            <button class="btn" onclick="downloadLog()">SAVE SESSION LOG</button>
+            <button class="btn destruct-btn" onclick="selfDestruct()">WIPE RAM / SHUTDOWN</button>
+        </div>
+    </div>
+
     <div id="screen_container">
         <div id="screen"></div>
         <canvas style="display: none"></canvas>
@@ -19,10 +85,14 @@
 
     <script src="libv86.js"></script>
     <script>
-    window.onload = function() {
-        var emulator = new V86Starter({
+    let emulator;
+
+    function startVM() {
+        document.getElementById('overlay').style.display = 'none';
+
+        emulator = new V86Starter({
             wasm_path: "v86.wasm",
-            memory_size: 32 * 1024 * 1024, // 32MB RAM
+            memory_size: 32 * 1024 * 1024,
             vga_canvas: document.querySelector("#screen_container canvas"),
             term_container: document.getElementById("screen"),
             bios: { url: "bios.bin" },
@@ -30,7 +100,31 @@
             cdrom: { url: "linux.iso" },
             autostart: true,
         });
-    };
+    }
+
+    // Function to scrape the terminal text and download as a .txt file
+    function downloadLog() {
+        const terminalText = document.getElementById('screen').innerText;
+        const blob = new Blob([terminalText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        a.href = url;
+        a.download = `ghost-os-log-${timestamp}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup to ensure no ghost data remains in browser memory URL references
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }
+
+    function selfDestruct() {
+        if(confirm("Are you sure? This will immediately wipe all data in RAM and reset the environment.")) {
+            window.location.reload();
+        }
+    }
     </script>
 </body>
 </html>
