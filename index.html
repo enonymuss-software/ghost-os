@@ -22,6 +22,7 @@
             background: #1a1a1a; 
             border-bottom: 1px solid #333; 
             font-size: 12px; 
+            z-index: 10;
         }
 
         .btn-group { display: flex; gap: 10px; }
@@ -44,6 +45,7 @@
         }
         .destruct-btn:hover { background: #661111; color: #fff; }
 
+        /* Consent Overlay */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95);
@@ -55,6 +57,24 @@
             background: #005500; color: #fff; border: 1px solid #0f0;
             padding: 10px 20px; cursor: pointer; font-size: 16px; margin-top: 20px;
         }
+
+        /* NEW: Quick Start Box Styling */
+        .help-box {
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            width: 300px;
+            background: #111;
+            border: 1px solid #444;
+            padding: 15px;
+            font-size: 11px;
+            color: #0f0;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            z-index: 500;
+        }
+        .help-box h4 { margin: 0 0 10px 0; text-transform: uppercase; }
+        .help-box ul { padding-left: 15px; margin: 0; }
+        .help-box li { margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -78,6 +98,17 @@
         </div>
     </div>
 
+    <div id="quick-start" class="help-box" style="display:none;">
+        <h4>🚀 Quick Start Guide</h4>
+        <ul>
+            <li><b>Loading Files:</b> Use the browser's <i>Copy/Paste</i> directly into the terminal.</li>
+            <li><b>Keyboard:</b> Use <code>Ctrl+L</code> to clear the screen.</li>
+            <li><b>Navigation:</b> Standard Linux commands (<code>ls</code>, <code>cd</code>, <code>cat</code>) apply.</li>
+        </ul>
+        <hr style="border:0; border-top:1px solid #333; margin: 10px 0;">
+        <p style="color:#888; margin-top:5px;">This help box will auto-hide in 15s.</p>
+    </div>
+
     <div id="screen_container">
         <div id="screen"></div>
         <canvas style="display: none"></canvas>
@@ -88,11 +119,20 @@
     let emulator;
 
     function startVM() {
+        // Hide the landing modal
         document.getElementById('overlay').style.display = 'none';
+        
+        // NEW: Show the help box and set it to hide after 15 seconds
+        document.getElementById('quick-start').style.display = 'block';
+        setTimeout(() => {
+            const helpBox = document.getElementById('quick-start');
+            if(helpBox) helpBox.style.display = 'none';
+        }, 15000);
 
+        // Initialize v86
         emulator = new V86Starter({
             wasm_path: "v86.wasm",
-            memory_size: 32 * 1024 * 1024,
+            memory_size: 32 * 1024 * 1024, 
             vga_canvas: document.querySelector("#screen_container canvas"),
             term_container: document.getElementById("screen"),
             bios: { url: "bios.bin" },
@@ -102,24 +142,22 @@
         });
     }
 
-    // Function to scrape the terminal text and download as a .txt file
+    // Export to .txt
     function downloadLog() {
         const terminalText = document.getElementById('screen').innerText;
         const blob = new Blob([terminalText], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         a.href = url;
         a.download = `ghost-os-log-${timestamp}.txt`;
         document.body.appendChild(a);
         a.click();
-        
-        // Cleanup to ensure no ghost data remains in browser memory URL references
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
     }
 
+    // Self-destruct feature
     function selfDestruct() {
         if(confirm("Are you sure? This will immediately wipe all data in RAM and reset the environment.")) {
             window.location.reload();
