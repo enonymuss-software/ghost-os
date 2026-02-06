@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     
-    <script src="./libv86.js"></script>
+    <script src="https://copy.sh/v86/build/libv86.js"></script>
 
     <style>
         body { background: #000; color: #fff; font-family: monospace; margin: 0; overflow: hidden; }
@@ -79,7 +79,7 @@
 
         // NOTE: Uses "V86Starter" with a Capital V
         emulator = new V86Starter({
-            wasm_path: "./v86.wasm",
+            wasm_path: "https://copy.sh/v86/build/v86.wasm",
             memory_size: 32 * 1024 * 1024, 
             vga_canvas: document.querySelector("#screen_container canvas"),
             term_container: document.getElementById("screen"),
